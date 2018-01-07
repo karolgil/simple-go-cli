@@ -1,0 +1,1 @@
+package simple_go_cli
