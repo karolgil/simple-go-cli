@@ -1,1 +1,7 @@
-package simple_go_cli
+package main
+
+import "fmt"
+
+func main(){
+	fmt.Println("Hello world!")
+}
