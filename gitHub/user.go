@@ -5,6 +5,7 @@ import (
 	"log"
 	"io/ioutil"
 	"encoding/json"
+	"sync"
 )
 
 const (
@@ -20,22 +21,27 @@ type User struct {
 	Email             string      `json:"email"`
 }
 
-func GetUser(username string) User {
-	resp, err := http.Get(apiURL + userEndpoint + username)
+func GetUsers(wg *sync.WaitGroup, usernames <-chan string, results chan<- User) {
+	defer wg.Done()
+	for username := range usernames {
+		func(){
+			resp, err := http.Get(apiURL + userEndpoint + username)
 
-	if err != nil {
-		log.Fatalf("Error retrieving data: %s\n", err)
+			if err != nil {
+				log.Fatalf("Error retrieving data: %s\n", err)
+			}
+
+			defer resp.Body.Close()
+
+			body, err := ioutil.ReadAll(resp.Body)
+
+			if err != nil {
+				log.Fatalf("Error reading data: %s\n", err)
+			}
+
+			var user User
+			json.Unmarshal(body, &user)
+			results <- user
+		}()
 	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		log.Fatalf("Error reading data: %s\n", err)
-	}
-
-	var user User
-	json.Unmarshal(body, &user)
-	return user
 }
